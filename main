@@ -1,0 +1,35 @@
+pragma solidity ^0.8.0;
+
+contract Marketplace {
+    struct Product {
+        string name;
+        uint256 price;
+        address seller;
+        bool isSold;
+    }
+
+    Product[] public products;
+
+    event ProductAdded(uint256 indexed productId, string name, uint256 price, address indexed seller);
+    event ProductSold(uint256 indexed productId, address indexed buyer);
+
+    function addProduct(string memory _name, uint256 _price) public {
+        uint256 newProductId = products.length;
+        products.push(Product(_name, _price, msg.sender, false));
+        emit ProductAdded(newProductId, _name, _price, msg.sender);
+    }
+
+    function buyProduct(uint256 _productId) public payable {
+        require(_productId < products.length, "Invalid product ID.");
+        Product storage product = products[_productId];
+        require(!product.isSold, "Product has already been sold.");
+        require(msg.value >= product.price, "Insufficient funds.");
+
+        product.isSold = true;
+        emit ProductSold(_productId, msg.sender);
+
+        if (msg.value > product.price) {
+            payable(msg.sender).transfer(msg.value - product.price);
+        }
+    }
+}
